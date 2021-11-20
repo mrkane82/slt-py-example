@@ -2,15 +2,18 @@
 
 """
 Author: Nick Russo
+Updated by Matthew Kane to add tests for the triangle class
 File: complete.py
 Purpose: Entrypoint for our simple application.
 """
 
 import json
 import sys
+import os
 import yaml
 from shapes.rectangle import Rectangle
 from shapes.circle import Circle
+from shapes.triangle import Triangle
 
 
 def main(argv):
@@ -25,8 +28,11 @@ def main(argv):
     rectangles = get_rectangles("inputs/rectangle.json")
     circles = get_circles("inputs/circle.yml")
 
+    # Read the triangles from JSON
+    triangles = get_triangles("inputs/triangle_sides.json")
+
     # Combine both shape types into one list
-    general_shapes = rectangles + circles
+    general_shapes = rectangles + circles + triangles
 
     # Iterate over the shape list using a 'for' loop.
     # Print out the math data for each shape using
@@ -34,7 +40,29 @@ def main(argv):
     for general_shape in general_shapes:
         print("Type:  " + str(general_shape))
         print(" Area:  {0} {1} sq".format(general_shape.area(), units))
-        print(f" Perim: {general_shape.perimeter()} {units}\n")
+        print(f" Perim: {general_shape.perimeter()} {units}")
+
+        if type(general_shape) is Triangle:
+            sides = general_shape.sides()
+            heights = general_shape.heights()
+            for side, height in zip(general_shape.sides(), general_shape.heights()):
+                print(f" If the side of length {side} {units} is treated as the base, "
+                      f"triangle has a height of {height} {units}")
+
+            # What is a better way to do these tests instead of four if-statements?
+            if general_shape.is_special():
+                if general_shape.is_equilateral():
+                    print(f" {str(general_shape)} is an equilateral triangle")
+                elif general_shape.is_isosceles():
+                    print(f" {str(general_shape)} is an isosceles triangle")
+                elif general_shape.is_right_angle():
+                    print(f" {str(general_shape)} is a right triangle")
+                elif general_shape.is_scalene():
+                    print(f" {str(general_shape)} is a scalene triangle")
+        print("")  #add a blank line to make the output look pretty
+
+    if not os.path.isdir("outputs"):
+        os.mkdir("outputs")
 
     # Create a list of shapes as dictionaries and write as JSON
     with open("outputs/computations.json", "w") as handle:
@@ -88,6 +116,21 @@ def get_circles(filename):
     # Return the list of Circle objects
     return circle_objects
 
+def get_triangles(filename):
+    """
+    Read in from the JSON file supplied and create a list of
+    triangles based on the input data
+    """
+    with open(filename, "r") as handle:
+        try:
+            data = json.load(handle)
+        except json.decoder.JSONDecodeError as error:
+            print(error)
+            raise
+
+    # Use list comprehension to create a new Triangle object
+    # for each set of sides found in the triangle_list
+    return [Triangle(tri["side1"], tri["side2"], tri["side3"]) for tri in data["triangle_list"]]
 
 def get_rectangles(filename):
     """
